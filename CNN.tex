@@ -1,0 +1,450 @@
+\documentclass{beamer}
+\setbeamertemplate{navigation symbols}{}
+\usepackage[UTF8]{ctex}
+\usetheme{Madrid}
+\usecolortheme{default}
+\usefonttheme{serif}
+\usepackage{amsmath,amssymb,array,xcolor,subcaption,tikz,listings}
+\lstset{
+    basicstyle=\ttfamily\scriptsize,
+    backgroundcolor=\color{gray!10},
+    frame=single,
+    numbers=left,
+    breaklines=true,
+    tabsize=4,
+    showstringspaces=false,
+    keywordstyle=\color{blue},
+    commentstyle=\color{green!50!black},
+}
+\title{\textbf{浅析CNN算法及其人工智能应用}}
+\subtitle{结合~Alex,Wang~的研究~与~AI图像检测}
+\author{\textit{侯东杨}}
+\date{\today}
+\institute{\textit{北京林业大学~理学院}}
+\begin{document}
+
+\begin{frame}
+    \titlepage
+\end{frame}
+
+\begin{frame}{概述}
+    \begin{block}{卷积神经网络算法}
+        Convolutional Neural Network,简称CNN,是一种深度学习算法,专门用于处理具有网格状拓扑结构数据.
+    \end{block}
+    CNN能够有效提取数据的局部特征并保持空间不变性,在计算机视觉任务(如图像分类、目标检测、图像分割等)中表现尤为出色,因此其在当前的生成式人工智能识别领域具有非常广泛的应用前景.
+    \begin{figure}
+        \centering
+        \begin{subfigure}{0.27\textwidth}
+            \centering
+            \includegraphics[width=\textwidth]{D:/Visual Studio Code/LaTex/Darft/PPT/CNN_Alex.jpg}
+        \end{subfigure}
+        \hskip0.05\textwidth
+        \begin{subfigure}{0.27\textwidth}
+            \centering
+            \includegraphics[width=\textwidth]{D:/Visual Studio Code/LaTex/Darft/PPT/CNN_Wang.jpg}
+        \end{subfigure}
+    \end{figure}
+\end{frame}
+
+\begin{frame}{概述}
+    \begin{figure}
+        \centering
+        \begin{subfigure}{0.4\textwidth}
+            \centering
+            \includegraphics[width=\textwidth]{D:/Visual Studio Code/LaTex/Darft/PPT/CNN_Alex.jpg}
+            \caption{Alex Krizhevsky 2012}
+        \end{subfigure}
+        \hskip0.05\textwidth
+        \begin{subfigure}{0.4\textwidth}
+            \centering
+            \includegraphics[width=\textwidth]{D:/Visual Studio Code/LaTex/Darft/PPT/CNN_Wang.jpg}
+            \caption{Sheng-Yu Wang 2020}
+        \end{subfigure}
+    \end{figure}
+\end{frame}
+
+\begin{frame}{目录}
+    \begin{itemize}
+        \item $\S1~$\textbf{基本概念}
+        \item $\S2~$\textbf{核心组件}
+        \begin{itemize}
+            \item $\S2.1~$卷积层
+            \item $\S2.2~$池化层
+            \item $\S2.3~$全连接层
+            \item $\S2.4~$正则化层
+        \end{itemize}
+        \item $\S3~$\textbf{算法流程}
+        \item $\S4~$\textbf{人工智能应用}
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{$\S1$基本概念}
+    \begin{block}{卷积神经网络}
+        Convolutional Neural Network,简称CNN,是一种深度学习算法,专门用于处理具有网格状拓扑结构数据.
+    \end{block}
+    \begin{itemize}
+        \item \textbf{CNN的核心思想}
+        \\CNN的设计灵感来源于人脑视觉系统,特别是视觉皮层中神经元对局部感受的响应.其模拟人脑视觉系统,提取局部特征,通过层次结构实现特征的抽象与整合.
+        \item \textbf{CNN的算法流程}
+        \\CNN通过\textbf{卷积层}提取局部特征,结合\textbf{池化层}降低维度,\textbf{全连接层}整合信息,用于分类、检测等任务,同时可引入\textbf{正则化层}防止过拟合.其利用参数共享和空间层次结构,有效减少计算量,提升对视觉数据的处理能力.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{$\S2.1$核心组件:卷积层}
+    \begin{block}{卷积层}
+        应用指定大小的\textbf{卷积核}在经过预处理(归一化、裁剪尺寸、添加额外像素等)的输入数据上滑动,提取对应数据的局部特征(边缘、纹理、形状等),形成\textbf{特征图},同时保留空间结构信息.
+    \end{block}
+    \begin{itemize}
+      \item \textbf{卷积核}
+        \begin{itemize}
+          \item 一般为定义小型矩阵(3阶或5阶方阵),在输入数据上滑动
+          \item 每个卷积核学习特定特征(如水平边缘、垂直边缘)
+          \item 每次的特定特征将参与形成本次卷积操作的\textbf{特征图}
+        \end{itemize}
+      \item \textbf{特征图}
+        \begin{itemize}
+          \item 卷积核与局部区域点积运算,生成特征图
+          \item 特征图形成公式:$(f*g)(i,j)=\sum\limits_{m,n}f(m,n)g(i-m,j-n)$
+          \item 特征图的长宽尺寸:$W_{out}=[\frac{W_{in}-K+2P}{S}]+1$,深度(通道数)即为卷积核的数量
+        \end{itemize}
+      \item \textbf{参数共享优势}
+        \begin{itemize}
+          \item 同一卷积核应用于所有区域,减少参数量,提高计算效率
+          \item 每次特征图均由相同卷积核生成,增加输出结果的鲁棒性
+        \end{itemize}
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{$\S2.1$核心组件:卷积层}
+    \begin{block}{卷积层}
+        应用指定大小的\textbf{卷积核}在经过预处理(归一化、裁剪尺寸、添加额外像素等)的输入数据上滑动,提取对应数据的局部特征(边缘、纹理、形状等),形成\textbf{特征图},同时保留空间结构信息.
+    \end{block}
+    \begin{itemize}
+    \item \textbf{数据设定}
+    \\假设输入为一个单通道图像(对应为4阶方阵$A$),选取二阶方阵卷积核$B$,如下所示.
+    \[
+        A=
+        \begin{pmatrix}
+            1&2&3&4\\
+            5&6&7&8\\
+            9&10&11&12\\
+            13&14&15&16\\
+        \end{pmatrix}
+        \quad B=
+        \begin{pmatrix}
+            1&0\\
+            0&-1\\
+        \end{pmatrix}
+        \quad C=
+        \begin{pmatrix}
+            5&5&5\\
+            5&5&5\\
+            5&5&5\\
+        \end{pmatrix}
+    \]
+    \item \textbf{卷积操作}
+      \begin{itemize}
+        \item 步长$S=1$,无填充,即$P=0$
+        \item 在特征图对应矩阵$C$位置$(1,1)$处,$(f*g)(1,1)=1\cdot 6+(-1)\cdot 1=5$
+        \item 滑动卷积核,计算所有位置,生成特征图,其对应矩阵即为$C$如上所示
+      \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{$\S2.2$核心组件:池化层}
+  \begin{block}{池化层}
+    池化层通过在卷积层生成的特征图上应用指定大小的\textbf{池化窗口}进行下采样,\textbf{降低特征图维度},保留关键特征信息,实现降低计算复杂度和增强模型的空间不变性的目标.
+  \end{block}
+  \begin{itemize}
+    \item \textbf{池化窗口}
+      \begin{itemize}
+        \item 一般为小型矩阵(常取2阶、3阶方阵)在\textbf{特征图}上滑动
+        \item 常见池化方式:最大池化(取窗口内最大值)、平均池化(取窗口内均值)
+        \item 池化窗口通过步幅控制滑动距离,决定池化层输出尺寸
+      \end{itemize}
+    \item \textbf{特征图降维}
+      \begin{itemize}
+        \item 池化操作对特征图的局部区域进行聚合,生成更小的特征图
+        \item 输出降维特征图尺寸公式与卷积层相同,保留相同的算法
+        \item 通道数保持不变,每个输入特征图生成一个输出特征图
+      \end{itemize}
+    \item \textbf{池化优势}
+      \begin{itemize}
+        \item 减少特征图尺寸,进一步降低计算量和参数量,防止过拟合
+        \item 增强模型对位置变化的鲁棒性(平移不变性),进一步提高泛化能力
+      \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{$\S2.2$核心组件:池化层}
+    \begin{block}{池化层}
+        池化层通过在卷积层生成的特征图上应用指定大小的\textbf{池化窗口}进行下采样,\textbf{降低特征图维度},保留关键特征信息,实现降低计算复杂度和增强模型的空间不变性的目标.
+    \end{block}
+    
+    \begin{itemize}
+        \item \textbf{数据设定}
+        \\假设输入为一个单通道图像(对应为4阶方阵$A$),如下所示.
+        \[
+            A=    
+            \begin{pmatrix}
+                1&2&3&4\\
+                5&6&7&8\\
+                9&10&11&12\\
+                13&14&15&16\\
+            \end{pmatrix}
+            \quad C=
+            \begin{pmatrix}
+                6&8\\
+                14&16\\
+            \end{pmatrix}
+        \]
+        \item \textbf{池化窗口}\\使用一个2阶方阵的最大池化窗口,步长$S=2$,无填充,即$P=0$.
+        \item \textbf{池化操作}
+        \begin{itemize}
+            \item 左上角:$\max\{1~2~5~6\}=6$,其余位置采取相同算法.
+            \item 最终得到池化层降低维度后的特征图,其对应矩阵即为$C$如上所示
+        \end{itemize}
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{$\S2.3$核心组件:全连接层}
+    \begin{block}{全连接层}
+        全连接层通过将卷积层或池化层生成的特征图展平为一维向量,并与权重矩阵进行全连接运算,整合全局特征,用于分类、回归等任务.
+    \end{block}
+    \begin{itemize}
+        \item \textbf{全连接操作}
+        \begin{itemize}
+            \item 将输入特征图展平为一维向量$x$
+            \item 通过权重矩阵$W$和偏置$b$,计算输出:$y=Wx+b$
+            \item 通常配合激活函数,如Softmax用于分类,ReLU用于隐藏层
+        \end{itemize}
+        \item \textbf{输出特征}
+        \begin{itemize}
+            \item 输出为固定大小的向量,长度通常对应任务目标,如分类任务的类别数
+            \item 整合卷积层和池化层提取的局部特征,形成全局表示.
+            \item 若输入向量为$x\in\mathbb{R}^N$,权重矩阵$W\in\mathbb{R}^{M \times N}$则输出$y\in\mathbb{R}^M$
+        \end{itemize}
+        \item \textbf{全连接优势}
+        \begin{itemize}
+            \item 综合全局信息,适合多类别分类等高层次决策任务
+            \item 可与正则化结合,减少过拟合风险
+        \end{itemize}
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{$\S2.3$核心组件:全连接层}
+    \begin{block}{全连接层}
+        全连接层通过将卷积层或池化层生成的特征图展平为一维向量,并与权重矩阵进行全连接运算,整合全局特征,用于分类、回归等任务.
+    \end{block}
+    \begin{itemize}
+        \item \textbf{数据设定}
+        \\假设输入为池化层的两个单通道特征图,其对应矩阵为2阶方阵$A,B$
+        \[
+            A=\begin{pmatrix}
+                6&8\\
+                14&16\\
+            \end{pmatrix}
+            B=\begin{pmatrix}
+                3&5\\
+                7&9\\
+            \end{pmatrix}
+        \]
+        展平为向量$x=(6,8,14,16,3,5,7,9)^T$
+        \item \textbf{全连接操作}
+        \\使用权重矩阵$W\in\mathbb{R}^{2\times 8}$和偏置$b\in\mathbb{R}^2$目标为二分类任务:
+        \[
+            W=\begin{pmatrix}
+            0.1&0.2&0.1&0.3&0.2&0.1&0.2&0.1 \\
+            -0.2&-0.1&-0.3&-0.2&-0.1&-0.2&-0.1&-0.3\\
+            \end{pmatrix}
+        \]
+        \[
+            b=\begin{pmatrix}
+                0.5\\
+                -0.5
+            \end{pmatrix}\]
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{$\S2.3$核心组件:全连接层}
+    \begin{block}{全连接层}
+        全连接层通过将卷积层或池化层生成的特征图展平为一维向量,并与权重矩阵进行全连接运算,整合全局特征,用于分类、回归等任务.
+    \end{block}
+    \begin{itemize}
+        \item \textbf{全连接操作}
+        \\计算:$y=Wx+b$
+        \item \textbf{计算过程}
+        \begin{itemize}
+            \item $y_1=0.1 \cdot 6+0.2 \cdot 8+\cdots+0.1 \cdot 9+0.5=4.8$
+            \item $y_2=(-0.2) \cdot 6+(-0.1) \cdot 8+\cdots+(-0.3) \cdot 9+(-0.5)=-3.4$
+            \item 输出向量:$y=(4.8,-3.4)^T$
+            \item 应用Softmax:$\text{Softmax}(y)=(0.99, 0.01)^T$表示其为类型1的概率为99\%
+        \end{itemize}
+        \item \textbf{意义}
+        \begin{itemize}
+            \item 全连接层整合特征图信息,输出分类概率
+            \item 权重矩阵$W$ 学习特征与类别的映射关系
+        \end{itemize}
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{$\S2.4$核心组件:正则化层}
+    \begin{block}{正则化层}
+        正则化层通过在训练过程中引入约束或随机化机制,限制模型复杂度,防止过拟合,提升模型在陌生数据上的泛化能力.
+    \end{block}
+    \begin{itemize}
+        \item \textbf{正则化方式}
+        \begin{itemize}
+            \item Dropout:在训练时随机弃置神经元,阻止模型过度依赖部分神经元
+            \item L2正则化:在损失函数中添加权重惩罚项,限制权重过大
+            \item Batch Normalization:标准化每一层的输入,稳定训练过程,间接减少过拟合
+        \end{itemize}
+        \item \textbf{正则化效果}
+        \begin{itemize}
+            \item 减少模型对训练数据噪声的敏感性,避免“记住”训练数据细节
+            \item 提高模型在测试数据上的性能,增强泛化能力
+            \item 以Dropout为例:在训练时,神经元以概率$p$被弃置,输出值为0
+        \end{itemize}
+        \item \textbf{正则化优势}
+        \begin{itemize}
+            \item 有效防止过拟合,尤其在深层网络或数据量不足时
+            \item 提高模型鲁棒性,适应多样化的输入数据
+        \end{itemize}
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{$\S2.4$核心组件:正则化层}
+    \begin{block}{正则化层}
+        正则化层通过在训练过程中引入约束或随机化机制,限制模型复杂度,防止过拟合,提升模型在陌生数据上的泛化能力.
+    \end{block}
+    \begin{itemize}
+        \item \textbf{数据设定} \\
+        假设全连接层输入为展平后的特征向量为$x=(6,8,14,16)^T$
+        权重矩阵$W\in\mathbb{R}^{2\times4} $,目标为二分类任务:
+        \[
+            W=\begin{pmatrix}
+                0.1&0.2&0.1&0.3\\
+                -0.2&-0.1&-0.3&-0.2
+            \end{pmatrix}
+            \quad b=
+            \begin{pmatrix}
+                0.5\\
+                -0.5
+            \end{pmatrix}
+        \]
+        \item \textbf{Dropout操作}
+        \\设定Dropout概率$p=0.5$,即每个神经元有50\%的概率被弃置
+        \begin{itemize}
+            \item 引入时间种子随机选择弃置的神经元,此处弃置第2和第4个元素.
+            \item 输入向量变为:$x'=(6,0,14,0)^T $.
+            \item 在推理阶段,权重乘以 $1-p=0.5$以补偿训练时的.
+        \end{itemize}
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{$\S2.4$核心组件:正则化层}
+    \begin{block}{正则化层}
+        正则化层通过在训练过程中引入约束或随机化机制,限制模型复杂度,防止过拟合,提升模型在陌生数据上的泛化能力.
+    \end{block}
+    \begin{itemize}
+        \item \textbf{计算过程}
+        \begin{itemize}
+            \item 训练时:$y'=Wx'+b$,计算:
+            \[
+                y'_1=0.1\cdot 6+0.2\cdot 0+0.1\cdot 14+0.3\cdot 0+0.5=2.3
+            \]
+            \[
+                y'_2=(-0.2)\cdot 6+(-0.1)\cdot 0+(-0.3)\cdot 14+(-0.2)\cdot 0+(-0.5)=-5.9
+            \]
+            输出:$y'=(2.3,-5.9)^T$.
+            \item 推理时:使用缩放权重$Wt(1-p)$,保证输出一致性.
+        \end{itemize}
+        \item \textbf{意义}
+        \begin{itemize}
+            \item Dropout随机弃置神经元,迫使模型学习更鲁棒的特征组合.
+            \item 防止模型过拟合训练数据,提升在测试数据上的表现.
+        \end{itemize}
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{$\S3$算法流程}
+    \begin{block}{CNN的算法流程}
+        CNN通过卷积层提取局部特征,结合池化层降低维度,全连接层整合信息,用于分类、检测等任务,同时可引入正则化层防止过拟合.
+    \end{block}
+    \begin{figure}
+        \centering
+        \begin{subfigure}{1\textwidth}
+            \centering
+            \includegraphics[width=\textwidth]{D:/Visual Studio Code/LaTex/Darft/PPT/CNN_Picture.jpg}
+        \end{subfigure}
+    \end{figure}
+\end{frame}
+
+\begin{frame}{$\S4$人工智能应用}
+    \begin{block}{AI图像识别}
+        基于TensorFlow,CNN算法可用于二分类任务(区分AI生成图像与真实照片).以下将结合代码实际,分析其具体实现流程及特性.
+        \\特别注意的是,应用该代码需要确保Python环境在3.10及以前,否则无法键入稳定的TensorFlow框架,进而进行CNN.如果Python环境较新,可以选择创建虚拟环境.venv,这样可以确保在稳定运行TensorFlow的情况下不影响其它函数的使用.
+    \end{block}
+    \begin{itemize}
+        \item \textbf{数据预处理与增强}
+        \begin{itemize}
+            \item \textbf{数据集加载}:使用\texttt{image\_dataset\_from\_directory}从指定目录加载图像,尺寸统一为\(150 \times 150\),分为训练集(80\%)和验证集(20\%),批次大小为32
+            \item \textbf{数据增强}:通过\texttt{Random}系列函数实现水平翻转、旋转(±20\%)、放缩(±20\%)和对比度调整,增强数据多样性,防止过拟合
+            \item \textbf{归一化}:使用\texttt{Rescaling}层将像素值从[0,255]放缩到[0,1],提高训练稳定性
+        \end{itemize}
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{$\S4$人工智能应用}
+    \begin{itemize}
+    \item \textbf{模型架构}
+        \begin{itemize}
+            \item \textbf{卷积层}:包含3个卷积层,分别使用32、64、128个3阶卷积核,激活函数为ReLU,提取多尺度特征
+            \item \textbf{池化层}:每个卷积层后接2阶池化窗口,步幅为2,减少特征图尺寸(约减半),降低计算量
+            \item \textbf{全连接层}:全连接层将特征图展平为一维向量,后接512单元的ReLU激活和1单元的Sigmoid激活,用于二分类
+            \item \textbf{Dropout正则化层}:在全连接层后添加\texttt{Dropout(0.5)},随机丢弃50\%神经元,防止过拟合
+            \item \textbf{优化器}:使用\texttt{Adam}优化器,学习率为0.001,适合快速收敛
+        \end{itemize}
+        \item \textbf{模型编译与训练}
+        \begin{itemize}
+            \item \textbf{训练设置}:训练10个周期(\texttt{epochs=10}),在训练集上拟合模型,验证集评估性能
+            \item \textbf{保存模型}:训练后保存为\texttt{ai\_vs\_photo\_model.h5}，便于后续加载。
+            \item \textbf{推理函数}:\texttt{predict\_image}加载单张图像，调整尺寸为\(150 \times 150\),归一化后预测,以0.5为阈值输出AI或Photo
+        \end{itemize}
+    \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{$\S4$人工智能应用}
+    \begin{block}{CNN的算法流程}
+        CNN通过卷积层提取局部特征,结合池化层降低维度,全连接层整合信息,用于分类、检测等任务,同时可引入正则化层防止过拟合.
+    \end{block}
+    \begin{itemize}
+    \item Python的技术部分如下所示.
+    \end{itemize}
+    \begin{lstlisting}[language=Python, basicstyle=\ttfamily\tiny]
+        model=Sequential()
+        model.add(Conv2D(32,(3,3),activation='relu',input_shape=(150,150,3)))
+        model.add(MaxPooling2D((2,2)))
+        model.add(Conv2D(64,(3,3),activation='relu'))
+        model.add(MaxPooling2D((2,2)))
+        model.add(Conv2D(128,(3,3),activation='relu'))
+        model.add(MaxPooling2D((2,2)))
+        model.add(Flatten())
+        model.add(Dense(512,activation='relu'))
+        model.add(Dropout(0.5))
+        model.add(Dense(1,activation='sigmoid'))
+    \end{lstlisting}
+\end{frame}
+
+\begin{frame}{参考文献}
+    \textbf{[1]} Krizhevsky A, Sutskever I, Hinton G E. ImageNet classification with deep convolutional neural networks [J]. Communications of the ACM, 2017, 60(6): 84-90. DOI: 10.1145/3065386.
+    \\\textbf{[2]} Wang S Y, Wang O, Zhang R, et al. CNN-generated images are surprisingly easy to spot... for now [C]//Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. [S.l.]: IEEE, 2020: 8695-8704.
+\end{frame}
+
+
+
+\begin{frame}
+    \titlepage
+\end{frame}
+
+\end{document}
